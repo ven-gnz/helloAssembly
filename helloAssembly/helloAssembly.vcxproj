@@ -139,6 +139,7 @@
     <ClCompile Include="glad.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="shader.cpp" />
+    <ClCompile Include="stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dependencies\include\glad\glad.h" />
@@ -289,6 +290,7 @@
     <ClInclude Include="dependencies\include\glm\vec4.hpp" />
     <ClInclude Include="dependencies\include\glm\vector_relational.hpp" />
     <ClInclude Include="dependencies\include\KHR\khrplatform.h" />
+    <ClInclude Include="dependencies\include\stb\stb_image.h" />
     <ClInclude Include="shader.h" />
   </ItemGroup>
   <ItemGroup>
