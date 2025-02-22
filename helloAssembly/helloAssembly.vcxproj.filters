@@ -834,6 +834,7 @@
     <None Include="resources\shader.vs" />
     <None Include="resources\shader.fs" />
     <None Include="resources\endCube.fs" />
+    <None Include="resources\endCube.vs" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="glfw3.lib" />

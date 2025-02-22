@@ -411,6 +411,7 @@
     <None Include="glfw3.dll" />
     <None Include="opengl32.dll" />
     <None Include="resources\endCube.fs" />
+    <None Include="resources\endCube.vs" />
     <None Include="resources\shader.fs" />
     <None Include="resources\shader.vs" />
   </ItemGroup>

@@ -21,20 +21,20 @@ unsigned int loadTexture(const char* path);
 // settings : dev conf for SD resolution, release for full hd.
 const unsigned int SCR_WIDTH = 854;
 const unsigned int SCR_HEIGHT = 480;
-float aspect = 16 / 9;
+float aspect = 16.0f / 9.0f;
 
 
 //World data
 
 float planeVertices[] = {
     // positions          // texture Coords
-     5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-    -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
-    -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+     5.0f, -0.5f,  75.0f,  2.0f, 0.0f,
+    -5.0f, -0.5f,  75.0f,  0.0f, 0.0f,
+    -5.0f, -0.5f, -75.0f,  0.0f, 2.0f,
 
-     5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-    -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
-     5.0f, -0.5f, -5.0f,  2.0f, 2.0f
+     5.0f, -0.5f,  75.0f,  2.0f, 0.0f,
+    -5.0f, -0.5f, -75.0f,  0.0f, 2.0f,
+     5.0f, -0.5f, -75.0f,  2.0f, 2.0f
 };
 
 float cubeVertices[] = {
@@ -95,7 +95,8 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
 }
 
 //camera
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 5.0f);
+glm::vec3 initialCameraPos = glm::vec3(0.0f, 0.0f, 5.0f);
+glm::vec3 cameraPos = initialCameraPos;
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 Camera camera(cameraPos, cameraUp);
@@ -106,11 +107,15 @@ float lastFrame = 0.0f; // Time of last frame
 
 
 std::vector<glm::vec3> cubePositions = {
-    glm::vec3(-1.0, 0.0, -2.0),
-    glm::vec3(2.0,0.0,-1.0),
-    glm::vec3(1.0f, 0.0f, -1.0f),
-    glm::vec3(-2.0f, 0.0f, -4.0f),
-    glm::vec3(-3.0f, 0.0f, -3.0f)
+    glm::vec3(-0.8, 0.0, 0.0),
+    glm::vec3(0.8, 0.0,-2.0),
+    glm::vec3(-0.8f, 0.0f, 6.0f),
+    glm::vec3(0.8f, 0.0f, 12.0f),
+    glm::vec3(0.8f, 0.0f, 18.0f),
+    glm::vec3(-0.8f, 0.0, -24.0f),
+    glm::vec3(0.8, 0.0 , -12.0f),
+    glm::vec3(0.8, 0.0, -14.0f),
+    glm::vec3(-0.8, 0.0 , -16.0f)
 };
 
 int main()
@@ -149,11 +154,11 @@ int main()
     }
 
     Shader simpleShader("resources/shader.vs", "resources/shader.fs");
-    Shader endCubeShader("resources/shader.vs", "resources/endcube.fs");
+    Shader endCubeShader("resources/endCube.vs", "resources/endCube.fs");
 
-    unsigned int marble = loadTexture("resources/marble.jpg");
-    unsigned int face = loadTexture("resources/awesomeface.png");
-    unsigned int container = loadTexture("resources/container.jpg");
+    unsigned int marble = loadTexture("resources/marble.jpg"); // 0
+    unsigned int container = loadTexture("resources/container.jpg"); // 1
+    unsigned int face = loadTexture("resources/awesomeface.png"); // 2
 
 
     unsigned int cubeVAO, cubeVBO;
@@ -188,10 +193,9 @@ int main()
    
     simpleShader.use();
     simpleShader.setInt("texture1", 0);
-
     endCubeShader.use();
-    endCubeShader.setInt("texture2", container);
-    endCubeShader.setInt("texture3", face);
+    endCubeShader.setInt("texture1", 1);
+    endCubeShader.setInt("texture2", 2);
 
     //decode audio file
 
@@ -208,7 +212,6 @@ int main()
     deviceConfig.sampleRate = decoder.outputSampleRate;
     deviceConfig.dataCallback = data_callback;
     deviceConfig.pUserData = &decoder;
-
 
     // initialize playback device
     if (ma_device_init(nullptr, &deviceConfig, &device) != MA_SUCCESS) {
@@ -242,17 +245,15 @@ int main()
         glClearColor(0.1, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-
-        if ( timePassed < 52 ) {
+        // 28
+        if ( timePassed < 2 ) {
             camera.Position = glm::vec3(camera.Position.x, camera.Position.y, camera.Position.z - 0.5 * deltaTime);
-
-            // do some lighting
 
             // Draw plane
             simpleShader.use();
             glm::mat4 model = glm::mat4(1.0f);
             glm::mat4 view = camera.GetViewMatrix();
-            glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), aspect, 0.1f, 100.0f);
+            glm::mat4 projection = glm::perspective(glm::radians(60.0f), aspect, 0.1f, 400.0f);
             simpleShader.setMat4("view", view);
             simpleShader.setMat4("projection", projection);
 
@@ -268,7 +269,8 @@ int main()
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, marble);
                 model = glm::mat4(1.0f);
-                model = glm::translate(model, cubePositions[i]);
+             
+                model = glm::translate(model, glm::vec3(cubePositions[i].x, cubePositions[i].y, cubePositions[i].z));
                 simpleShader.setMat4("model", model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
@@ -278,46 +280,39 @@ int main()
         }
         // scene ending render
         else {
-            if (timePassed < 52) {
-                
+            if (timePassed < 2) {
+                endCubeShader.use();
+                camera.Position = initialCameraPos;
+                glBindVertexArray(cubeVAO);
                 
                 glm::mat4 view = camera.GetViewMatrix();
-                glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), aspect, 0.1f, 100.0f);
+                glm::mat4 projection = glm::perspective(glm::radians(60.0f), aspect, 0.1f, 500.0f);
            
                 glm::mat4 model = glm::mat4(1.0f);
                 
-
-                model = glm::translate(model, glm::vec3(0.5 * cos(timePassed), 0.5 * sin(timePassed), 0.0));
-              
-                endCubeShader.use();
+                model = glm::translate(model, glm::vec3(0.0f, 0.0f, 3.0f));
+                model = glm::scale(model, glm::vec3(1.5f));
+     
                 endCubeShader.setMat4("model", model);
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, container);
-                glActiveTexture(GL_TEXTURE1);
-                glBindTexture(GL_TEXTURE_2D, face);
-                glBindVertexArray(cubeVAO);
-               
+                endCubeShader.setMat4("view", view);
+                endCubeShader.setMat4("projection", projection);
                 
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, container);
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, face);
+               
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
 
-           
-
         }
-        
-
-
-        //check if enough time has passed, then we render big container cube
-        //Big container cube disco, if time
       
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-
    
     glDeleteVertexArrays(1, &cubeVAO);
     glDeleteBuffers(1, &cubeVAO);
- 
 
     // audio termination
     ma_device_uninit(&device);
