@@ -3,6 +3,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#define MINIAUDIO_IMPLEMENTATION
+#include<miniaudio/miniaudio.h>
+
 #include <iostream>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -25,17 +28,35 @@ const char* fragmentShaderSource = "#version 330 core\n"
 "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
 "}\n\0";
 
+
+// Audio setups
+const std::string AUDIO_FILE_PATH = "song-150bpm.wav";
+void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
+    ma_decoder* pDecoder = (ma_decoder*)pDevice->pUserData;
+    if (pDecoder == nullptr) {
+        return;
+    }
+
+    ma_decoder_read_pcm_frames(pDecoder, pOutput, frameCount, nullptr);
+    (void)pInput;
+}
+
 int main()
 {
-  
+    //GLFW consts
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    // glfw window creation
+    //miniaudio consts
+    ma_result result;
+    ma_decoder decoder;
+    ma_device_config deviceConfig;
+    ma_device device;
+
     // dev conf
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "DebugBuild", NULL, NULL);
     //release conf
     // GLFWwindow* window = glfwCreateWindow(1920, 1080, "LearnOpenGL", glfwGetPrimaryMonitor(), NULL);
     if (window == NULL)
@@ -56,9 +77,6 @@ int main()
     }
 
 
-    // build and compile our shader program
-    // ------------------------------------
-    // vertex shader
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
     glCompileShader(vertexShader);
@@ -96,15 +114,14 @@ int main()
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    // set up vertex data (and buffer(s)) and configure vertex attributes
-    // ------------------------------------------------------------------
+   
     float vertices[] = {
          0.5f,  0.5f, 0.0f,  // top right
          0.5f, -0.5f, 0.0f,  // bottom right
         -0.5f, -0.5f, 0.0f,  // bottom left
         -0.5f,  0.5f, 0.0f   // top left 
     };
-    unsigned int indices[] = {  // note that we start from 0!
+    unsigned int indices[] = {  
         0, 1, 3,  // first Triangle
         1, 2, 3   // second Triangle
     };
@@ -127,27 +144,51 @@ int main()
     // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    // remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
     // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
     glBindVertexArray(0);
 
+    //decode audio file
 
-    // uncomment this call to draw in wireframe polygons.
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    result = ma_decoder_init_file(AUDIO_FILE_PATH.c_str(), nullptr, &decoder);
+    if (result != MA_SUCCESS) {
+        std::cerr << "Could not load file: " << AUDIO_FILE_PATH << std::endl;
+        return -2;
+    }
+
+    // playback device configuration
+    deviceConfig = ma_device_config_init(ma_device_type_playback);
+    deviceConfig.playback.format = decoder.outputFormat;
+    deviceConfig.playback.channels = decoder.outputChannels;
+    deviceConfig.sampleRate = decoder.outputSampleRate;
+    deviceConfig.dataCallback = data_callback;
+    deviceConfig.pUserData = &decoder;
+
+
+    // initialize playback device
+    if (ma_device_init(nullptr, &deviceConfig, &device) != MA_SUCCESS) {
+        std::cerr << "Failed to open playback device." << std::endl;
+        ma_decoder_uninit(&decoder);
+        return -3;
+    }
+
+    // Start audio playback
+    if (ma_device_start(&device) != MA_SUCCESS) {
+        std::cerr << "Failed to start playback device." << std::endl;
+        ma_device_uninit(&device);
+        ma_decoder_uninit(&decoder);
+        return -4;
+    }
 
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
     {
-        // input
-        // -----
+        
         processInput(window);
 
-        // render
-        // ------
+        
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -170,6 +211,10 @@ int main()
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
     glDeleteProgram(shaderProgram);
+
+    // audio termination
+    ma_device_uninit(&device);
+    ma_decoder_uninit(&decoder);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------

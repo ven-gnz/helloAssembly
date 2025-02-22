@@ -290,6 +290,7 @@
     <ClInclude Include="dependencies\include\glm\vec4.hpp" />
     <ClInclude Include="dependencies\include\glm\vector_relational.hpp" />
     <ClInclude Include="dependencies\include\KHR\khrplatform.h" />
+    <ClInclude Include="dependencies\include\miniaudio\miniaudio.h" />
     <ClInclude Include="dependencies\include\stb\stb_image.h" />
     <ClInclude Include="shader.h" />
   </ItemGroup>
@@ -410,6 +411,9 @@
   </ItemGroup>
   <ItemGroup>
     <Library Include="glfw3.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="song-150bpm.wav" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

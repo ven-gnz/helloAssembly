@@ -485,6 +485,9 @@
     <ClInclude Include="dependencies\include\stb\stb_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="dependencies\include\miniaudio\miniaudio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="glfw3.dll" />
@@ -825,5 +828,10 @@
   </ItemGroup>
   <ItemGroup>
     <Library Include="glfw3.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="song-150bpm.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
   </ItemGroup>
 </Project>
